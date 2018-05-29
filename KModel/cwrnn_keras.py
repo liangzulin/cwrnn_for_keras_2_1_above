@@ -65,6 +65,24 @@ class ClockworkRNN(SimpleRNN):
             # old implementation did this at run time
             self.recurrent_kernel = self.recurrent_kernel * self.mask
 
+        if self.debug:
+            print('After cwrnn build')
+            print("self.period_spec--------------------------------")
+            print(self.period_spec)
+            print("self.mask--------------------------------")
+            print(self.mask, type(self.mask))
+            print("self.period--------------------------------")
+            print(self.period, type(self.period))
+            print("self.periods--------------------------------")
+            print(self.periods)
+
+            if ClockworkRNN.k_v > ClockworkRNN.target_v:
+                print("self.cell.recurrent_kernel--------------------------------")
+                print(self.cell.recurrent_kernel)
+            else:
+                print("self.recurrent_kernel--------------------------------")
+                print(self.recurrent_kernel)
+
         # simple rnn initializes the wrong size self.states
         # we want to also keep the time step in the state.
         if self.stateful:
