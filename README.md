@@ -27,3 +27,9 @@ And add a simple help how to use it:
 
 The test code has been run at Windows 7 with Anaconda 2, Keras 2.1.4, Theano.
 And it also has been run at Cent OS 7 with Anaconda 2, Keras 2.0.4, Theano.
+
+Predict Result:
+![Training and predict curve](https://github.com/liangzulin/cwrnn_for_keras_2_1_above/blob/master/test_cwrnn_1.png?raw=true)
+
+Training and Test curve for epochs from 1 to 100:
+![Training and predict curve](https://github.com/liangzulin/cwrnn_for_keras_2_1_above/blob/master/test_cwrnn_2.png?raw=true)
