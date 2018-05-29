@@ -2,7 +2,7 @@
 
 This is a modified version of braingineer's ikelos cwrnn, update it to suit both keras 2.1.4 version and 2.0.4 version
 
-The main change is add a keras version detector for selecting suitable function. 
+The main change is that adding a keras version detector for selecting suitable function. 
 E.g. 
 
         if ClockworkRNN.k_v > ClockworkRNN.target_v:
