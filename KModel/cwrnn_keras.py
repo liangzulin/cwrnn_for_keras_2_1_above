@@ -21,6 +21,19 @@ class ClockworkRNN(SimpleRNN):
         References:
             A Clockwork RNN
                 http://arxiv.org/abs/1402.3511
+
+            others:
+            https://github.com/keras-team/keras/issues/2669
+            https://github.com/DeanIsMe/Keras_Objects
+            https://github.com/dzhu622911/nn-keras-cwrnn
+            https://github.com/keras-team/keras/tree/master/keras/layers
+            https://github.com/braingineer/ikelos
+            https://github.com/dzhu622911/nn-tf-cwrnn
+            https://github.com/anirudh9119/clockwork_rnn
+            https://cm-gitlab.stanford.edu/tsob/musicNet/tree/02b1bc6ba5d5f299dc80db46be97a07d9fdd222d/theanets-cwRNN
+
+        Modified by liangzulin
+
     """
     k_v = keras.__version__
     target_v = '2.1.0'
@@ -29,6 +42,9 @@ class ClockworkRNN(SimpleRNN):
         # self.units = units
         if period_spec is None:
             period_spec = [1]
+            print("period_spec is None")
+        if debug:
+            print('$$$$$$$$$$ period_spec == ', period_spec)
         assert units % len(period_spec) == 0, ("Clockwork RNN requires the units to be " +
                                                "a multiple of the number of periods; " +
                                                "units %% len(period_spec) failed.")
@@ -38,7 +54,7 @@ class ClockworkRNN(SimpleRNN):
         self.periods = None  # <----------- initialise periods
         self.recurrent_kernel = None  # <-- initialise recurrent_kernel
         self.debug = debug
-        super(ClockworkRNN, self).__init__(units, **kwargs)
+        super(ClockworkRNN, self).__init__(units=units, **kwargs)
 
     def build(self, input_shape):
         # construct the clockwork structures
@@ -51,7 +67,7 @@ class ClockworkRNN(SimpleRNN):
             mask[i * n:(i + 1) * n, i * n:] = 1
             period[i * n:(i + 1) * n] = t
         self.mask = k_backend.variable(mask, name='clockword_mask')
-        self.period = k_backend.variable(period, dtype='int16', name='clockwork_period')
+        # self.period = k_backend.variable(period, dtype='int16', name='clockwork_period')
 
         super(ClockworkRNN, self).build(input_shape)
 
@@ -64,6 +80,10 @@ class ClockworkRNN(SimpleRNN):
         else:
             # old implementation did this at run time
             self.recurrent_kernel = self.recurrent_kernel * self.mask
+
+        # self.periods = self.period
+        # self.cell.period = self.period
+        # self.cell.periods = self.period
 
         if self.debug:
             print('After cwrnn build')
@@ -114,9 +134,6 @@ class ClockworkRNN(SimpleRNN):
     def reset_states(self, **kwargs):
         assert self.stateful, 'Layer must be stateful.'
         input_shape = self.input_spec[0].shape
-
-        # print("reset_states in KModel (cwrnn_keras_2.py 74 lines)")
-        # print(input_shape)
 
         if not input_shape[0]:
             raise Exception('If a RNN is stateful, a complete ' +

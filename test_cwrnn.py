@@ -16,7 +16,13 @@ main_debug = False
 cwrnn_debug = False
 
 
-def run(epochs):
+def run(epochs, period_spec=None, units=32):
+    look_back = 32
+
+    if period_spec is None:
+        period_spec = [1, 2, 4, 8]
+        # period_spec = [8]
+        # period_spec = [4, 8, 15, 30, 60]
 
     os = platform.architecture()[1]
     if os == 'WindowsPE':
@@ -64,7 +70,7 @@ def run(epochs):
 
     train, test = dataset[0:train_size, :], dataset[train_size:len(dataset), :]
     # use this function to prepare the train and test datasets for modeling
-    look_back = 32
+
     train_x, train_y = create_dataset(train, look_back)
     test_x, test_y = create_dataset(test, look_back)
     # reshape input to be [samples, time steps, features]
@@ -99,13 +105,24 @@ def run(epochs):
     #
     #
     #
+    """
+    [[[0.01544401 0.02702703 0.05405405 ... 0.14285713 0.18339768 0.18339768]]
+     [[0.02702703 0.05405405 0.04826255 ... 0.18339768 0.18339768 0.15444016]]
+     [[0.05405405 0.04826255 0.03281853 ... 0.18339768 0.15444016 0.11196911]]
+     ...
+     [[0.14671814 0.18725869 0.19305018 ... 0.4034749  0.4131274  0.52123547]]
+     [[0.18725869 0.19305018 0.16216215 ... 0.4131274  0.52123547 0.5965251 ]]
+     [[0.19305018 0.16216215 0.25289574 ... 0.52123547 0.5965251  0.58108103]]]
+    """
+    print('^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^')
+    print(train_x)
     # =================================== Model Define Core ===============================================
 
     model = Sequential()
-    model.add(ClockworkRNN(units=90,
-                           period_spec=[1, 2, 4, 8, 16],
-                           input_shape=train_x.shape[1:],  # (1, look_back), ---  (samples, timesteps, dimension)
-                           dropout_W=0.4,
+    model.add(ClockworkRNN(units=units,
+                           period_spec=period_spec,
+                           input_shape=train_x.shape[1:],  # (timesteps, dimension)<-----(samples, timesteps, dimension)
+                           dropout_W=0.2,
                            return_sequences=True,
                            debug=cwrnn_debug))  # debug is for developing mode, you can remove
     model.add(Dropout(.2))
@@ -118,6 +135,18 @@ def run(epochs):
     test_predict = model.predict(test_x)
 
     # ==============================================================================================
+    print('^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^')
+    print(train_predict)
+    """
+    np.array ---- train_predict
+    [[[0.15953538]]
+     [[0.19956353]]
+     [[0.14648083]]
+     ...
+     [[0.30051968]]
+     [[0.34990734]]
+     [[0.36803696]]]
+    """
     #
     #
     #
@@ -225,6 +254,7 @@ def run(epochs):
     ax1.plot(scaler.inverse_transform(dataset), label="original data")
     ax1.plot(train_predict_plot, label="training_" + str(mape_total_train * 100.0) + " %")
     ax1.plot(test_predict_plot, label="predict_" + str(mape_total * 100.0) + " %")
+    ax1.set_title('period_spec='+str(period_spec)+'; units='+str(units), fontsize=12, color='black')
 
     handles, labels = ax1.get_legend_handles_labels()
     # reverse the order
@@ -233,7 +263,7 @@ def run(epochs):
     if os == 'WindowsPE':
         plt.show()
     else:
-        plt.savefig("result_"+str(epochs)+".jpg")
+        plt.savefig("result_"+str(epochs)+"_"+str(len(period_spec)) + "_" + str(units) + ".jpg")
 
     return mape_total_train, mape_total
 
@@ -285,30 +315,49 @@ if __name__ == "__main__":
 
         t = 0.0
         h = 0
-        for j in range(len(train_s)):
-            if t < (train_s[j] + predict_s[j]):
-                t = (train_s[j] + predict_s[j])
-                h = j
+        for jjj in range(len(train_s)):
+            if t < (train_s[jjj] + predict_s[jjj]):
+                t = (train_s[jjj] + predict_s[jjj])
+                h = jjj
         print(t)
         print(h)
 
-        f_main, (ax_main) = plt.subplots(figsize=(10, 4), nrows=1)
-        ax_main.plot(train_s, label='train')
-        ax_main.plot(predict_s, label='predict')
-        handles_main, labels_main = ax_main.get_legend_handles_labels()
-        # reverse the order
-        ax_main.legend(handles_main[::-1], labels_main[::-1])
-        plt.show()
+        # f_main, (ax_main) = plt.subplots(figsize=(10, 4), nrows=1)
+        # ax_main.plot(train_s, label='train')
+        # ax_main.plot(predict_s, label='predict')
+        # handles_main, labels_main = ax_main.get_legend_handles_labels()
+        # ax_main.legend(handles_main[::-1], labels_main[::-1])
+        # plt.show()
 
-        mape_total_train_o, mape_total_predict_o = run(1)
+        units_main = 64
+        period_spec_main = [1, 2]  # , 4, 8, 10, 12, 14, 6]
+        for iii in range(1, 11):
+            print(units_main % iii == 0, units_main, iii)
+        mape_total_train_o, mape_total_predict_o = run(1, period_spec_main, units_main)
     else:
         mape_total_train_list = []
         mape_total_predict_list = []
-        for iii in range(100):
-            mape_total_train_o, mape_total_predict_o = run(iii)
-            mape_total_train_list.append(mape_total_train_o)
-            mape_total_predict_list.append(mape_total_predict_o)
+
+        for units_main in [16, 32, 64, 128, 256, 512]:
+
+            for iii in range(1, 30):
+                if units_main % iii != 0:
+                    continue
+
+                # [4, 8, 15, 30, 60]
+                period_spec_main = []
+                for jj in range(iii):
+                    period_spec_main.append(math.pow(2, jj))
+                print(period_spec_main)
+
+                mape_total_train_o, mape_total_predict_o = run(41, period_spec_main, units_main)
+                mape_total_train_list.append(mape_total_train_o)
+                mape_total_predict_list.append(mape_total_predict_o)
+
         print('------mape_total_train_list-------')
         print(mape_total_train_list)
         print('------mape_total_predict_list-------')
         print(mape_total_predict_list)
+
+# Need to validate different param
+# Need to test different unit
